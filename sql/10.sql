@@ -17,15 +17,16 @@ WITH spending AS (
     SUM(p.amount) AS total_payment
   FROM customer c
   JOIN payment p ON c.customer_id = p.customer_id
-  GROUP BY c.customer_id, c.first_name, c.last_name
+  GROUP BY c.customer_id
+),
+rank_cust AS (
+    SELECT *,
+    NTILE(100) OVER (ORDER BY total_payment) AS percentile
+    FROM spending
 )
+
 SELECT customer_id, name, total_payment, percentile
-FROM (
-  SELECT
-    s.*,
-    NTILE(100) OVER (ORDER BY total_payment DESC) AS percentile
-  FROM spending s
-) sub
+FROM rank_cust
 WHERE percentile >= 90
 ORDER BY name;
 

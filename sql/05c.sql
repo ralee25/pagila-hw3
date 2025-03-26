@@ -6,17 +6,20 @@
  * (The actors do not necessarily have to all be in the same movie, and you do not necessarily need one actor from each movie.)
  */
 
+WITH movies_three AS (
+    SELECT film_id
+    FROM film
+    WHERE title in ('AMERICAN CIRCUS', 'ACADEMY DINOSAUR', 'AGENT TRUMAN')
+)
 SELECT f.title
 FROM film f
-WHERE (
-  SELECT COUNT(DISTINCT fa.actor_id)
-  FROM film_actor fa
-  WHERE fa.film_id = f.film_id
-    AND fa.actor_id IN (
-      SELECT DISTINCT fa_sub.actor_id
-      FROM film_actor fa_sub
-      JOIN film f_sub ON fa_sub.film_id = f_sub.film_id
-      WHERE f_sub.title IN ('ACADEMY DINOSAUR', 'AGENT TRUMAN', 'AMERICAN CIRCUS')
-    )
-) >= 3;
-
+JOIN film_actor fa ON fa.film_id = f.film_id
+JOIN (
+    SELECT actor_id, COUNT(*) as count_appear
+    FROM film_actor
+    WHERE film_id IN (SELECT film_id FROM movies_three)
+    GROUP BY actor_id
+) actor_counts ON fa.actor_id = actor_counts.actor_id
+GROUP BY f.title
+HAVING SUM(actor_counts.count_appear) >= 3
+ORDER BY f.title;
